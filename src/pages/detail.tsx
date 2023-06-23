@@ -8,26 +8,21 @@ import TextField from "@mui/material/TextField";
 export default function DetailPage() {
   const [issue, setIssue] = useState<IIssue|null>(null);
 
-  let issueId;
-
   let params = useParams();
-  const fetchIssue = async (issueId: number) => {
+  const fetchIssue = async (issueId: string) => {
     try {
-      const result: IIssue = await getIssueById(issueId);
-      console.log(result);
-      setIssue(result)
+      const fetchedIssue: IIssue = await getIssueById(issueId);
+      setIssue(fetchedIssue)
     } catch (e) {
       console.log("Not found");
     }
-    //setIssues(result)
   };
 
   useEffect(() => {
     console.log("Mounted - getting issue");
-    issueId = "1";
     console.log(params);
-    fetchIssue(parseInt(issueId || ""));
-  }, [issue]);
+    fetchIssue(params.issueId || '');
+  }, [issue, params]);
 
   return (
     <div style={{}}>

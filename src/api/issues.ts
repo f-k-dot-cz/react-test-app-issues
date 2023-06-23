@@ -2,7 +2,7 @@ import issues from "./data/issues.json";
 import IIssue from "../types/issue"
 
 const getIssues = () =>
-  new Promise((resolve, reject): any => {
+  new Promise<IIssue[]>((resolve, reject): any => {
     if (!issues) {
       return setTimeout(() => reject(new Error("Issues not found")), 250);
     }
@@ -10,15 +10,15 @@ const getIssues = () =>
     setTimeout(() => resolve(Object.values(issues)), 250);
   });
 
-const getIssueById = (id: number): any =>
+const getIssueById = (id: string): any =>
   new Promise((resolve, reject) => {
-    const issue = issues[id];
+    const issue = issues.filter((issue) => issue.issueGuid === id)[0];
 
     if (!issue) {
       return setTimeout(() => reject(new Error("Issue not found")), 250);
     }
 
-    setTimeout(() => resolve(issues[id]), 250);
+    setTimeout(() => resolve(issues.filter((issue) => issue.issueGuid === id)[0]), 250);
   });
 
 //Rewrite to ES6

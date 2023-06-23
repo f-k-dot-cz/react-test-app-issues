@@ -1,61 +1,94 @@
-import { DataGrid, GridRowsProp, GridColDef, GridEventListener, useGridApiRef} from "@mui/x-data-grid";
+import {
+  DataGrid,
+  GridRowsProp,
+  GridColDef,
+  GridEventListener,
+  GridValueGetterParams,
+  GridRenderCellParams,
+} from "@mui/x-data-grid";
+import IIssue from "../types/issue";
 import { useEffect, useState } from "react";
 import { getIssues } from "../api";
 import { useNavigate } from "react-router-dom";
-import IIssue from "../types/issue";
+import { format } from "date-fns";
 
-const rows: GridRowsProp = [{
-  "id": 1,
-  "status": "Open",
-  "createdDate": "2021-10-10T10:10:10.000Z",
-  "title": "Issue 1",
-  "assignee": "John Doe",
-  "previewUrl": "https://www.google.com"  
-},{
-  "id": 2,
-  "status": "Open",
-  "createdDate": "2021-10-10T10:10:10.000Z",
-  "title": "Issue 2",
-  "assignee": "John Doe",
-  "previewUrl": "https://www.google.com"  
-}];
+const getFullName = (params: GridValueGetterParams) => {
+  return params.row?.assignee?.fullName || "n/a";
+};
+
+const getCreatedDate = (params: GridValueGetterParams) => {
+  return format(new Date(params.row.createdDate), "dd.MM.yyyy");
+};
+
+const getPreview = (params: GridRenderCellParams) => {
+  return (
+    <a href={params.row.previewUrl} target="_blank" rel="noreferrer">
+      <img src={params.row.previewUrl} alt="thumbnail" style={{ width: "100%" }} className="preview" />
+    </a>
+  );
+};
+
 const columns: GridColDef[] = [
-  { field: "status", headerName: "Status", width: 150 },
-  { field: "createdDate", headerName: "Created", width: 150 },
-  { field: "title", headerName: "Title", width: 150 },
-  { field: "assignee", headerName: "Assignee", width: 150 },
-  { field: "previewUrl", headerName: "Preview", width: 150 },
+  { field: "status", headerName: "Status", width: 120 },
+  {
+    field: "createdDate",
+    headerName: "Created",
+    width: 150,
+    valueGetter: getCreatedDate,
+  },
+  { field: "title", headerName: "Title", minWidth: 200, flex: 1 },
+  {
+    field: "assignee",
+    headerName: "Assignee",
+    width: 250,
+    valueGetter: getFullName,
+  },
+  {
+    field: "previewUrl",
+    headerName: "Preview",
+    width: 100,
+    renderCell: getPreview,
+  },
 ];
 
 export default function ListPage() {
-  const [issues, setIssues] = useState();
-
+  const [issues, setIssues] = useState<GridRowsProp>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const navigate = useNavigate();
 
-  const handleEvent: GridEventListener<'rowClick'> = (
+  const handleEvent: GridEventListener<"rowClick"> = (
     params, // GridRowParams
     event, // MuiEvent<React.MouseEvent<HTMLElement>>
-    details, // GridCallbackDetails
+    details // GridCallbackDetails
   ) => {
-    navigate(`/detail/${params.row.id}`);
+    const targetElem: HTMLElement = event.target as HTMLElement;
+    if(!targetElem.classList.contains('preview')) {
+      navigate(`/detail/${params.row.issueGuid}`);
+    }
   };
-  
+
   const fetchIssues = async () => {
-    const result: any = await getIssues();
-    console.log(result)
-    setIssues(result)
+    setLoading(true);
+    const fetchedIssues: IIssue[] = await getIssues();
+    setIssues(fetchedIssues);
+    setLoading(false);
   };
 
   useEffect(() => {
-    console.log("Mounted - getting issues");
     fetchIssues();
-  }, [issues]);
+  }, []);
 
   return (
     <div style={{}}>
-      <h3>Protected</h3>
-      <DataGrid onRowClick={handleEvent} rows={rows} columns={columns} />
+      <h3>Issues List</h3>
+      <DataGrid
+        onRowClick={handleEvent}
+        getRowId={(row) => row.issueGuid}
+        loading={loading}
+        rows={issues}
+        columns={columns}
+      />
     </div>
   );
 }
